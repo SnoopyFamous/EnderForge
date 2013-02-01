@@ -1,0 +1,8 @@
+name: EnderForge
+main: com.github.DarkSeraphim.EnderForge.EnderForge
+version: 1.0
+
+commands:
+  ef:
+    description: main command of EnderForge
+    usage: /<command> [reload (not working yet)|register]

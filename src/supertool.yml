@@ -1,0 +1,27 @@
+##
+#   IF YOU WANT TO KEEP THIS AS A REMINDER, RENAME IT TO SOMETHING WITHOUT
+#   THE .yml EXTENSION. THEN THE FILE IS IGNORED, AND YOU HAVE A REMINDER
+##
+
+#ItemName is defined by the filename, stripped from the extension
+id: 280
+amount: 1
+# make sure the data does not conflict!
+# MANDATORY to make it an ingredient for other items
+data: 1
+# Lore, the description below the item
+lore:
+  - A stick
+  - Better than any stick you knew before
+# Enchanments
+enchantments:
+  - sharpness:10
+# Recipe is a list of ingredients. Eveny ingredient is an ItemStack of 1 item
+# Adding more than 9 ItemStacks causes a recipe not to function
+# First value is the id, after the colon is the datavalue
+# For tools, this is the byte value (for plugin developers)
+# MANDATORY
+recipe:
+  - 280:0
+  - 280:0
+  - 280:0
