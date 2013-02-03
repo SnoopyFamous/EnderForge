@@ -1,7 +1,7 @@
-SuperCrafting
+EnderForge
 =====================
-Crafting for heroes! 
+Crafting for heroes and dragons! 
 
 
 (note: not the plugin Heroes)
-=====================
+==========
