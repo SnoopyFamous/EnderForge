@@ -63,4 +63,52 @@ public enum EnderEnchantment
         return null;
     }
     
+    public static String getEName(Enchantment e)
+    {
+        for(EnderEnchantment se : values())
+        {
+            if(se.getEnchantment().equals(e))
+            {
+                return se.getName();
+            }
+        }
+        return null;
+    }
+    
+    /**
+     *  Thanks to this stackoverflow page for the conversion ;D
+     *  http://stackoverflow.com/questions/3921866/how-do-you-find-a-roman-numeral-equivalent-of-an-integer
+     */
+    
+    private static final char[] R = {'ↂ', 'ↁ', 'M', 'D', 'C', 'L', 'X', 'V', 'I'};
+    // or, as suggested by Andrei Fierbinteanu
+    // private static final String[] R = {"X\u0305", "V\u0305", "M", "D", "C", "L", "X", "V", "I"};
+    private static final int MAX = 10000; // value of R[0], must be a power of 10
+
+    private static final int[][] DIGITS = {
+        {},{0},{0,0},{0,0,0},{0,1},{1},
+        {1,0},{1,0,0},{1,0,0,0},{0,2}};
+
+   
+    public static String toRoman(int number) 
+    {
+        if (number < 0 || number >= MAX*4) 
+        {
+            throw new IllegalArgumentException("toRoman: " + number + " is not between 0 and " + (MAX*4-1));
+        }
+        if (number == 0) return "N";
+        StringBuilder sb = new StringBuilder();
+        int i = 0, m = MAX;
+        while (number > 0) 
+        {
+            int[] d = DIGITS[number / m];
+            for (int n: d) sb.append(R[i-n]);
+            number %= m;
+            m /= 10;
+            i += 2;
+        }
+        
+        return sb.toString();
+    }
+    
 }

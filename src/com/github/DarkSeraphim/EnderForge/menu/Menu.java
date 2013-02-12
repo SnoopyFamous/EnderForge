@@ -9,10 +9,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -87,7 +89,7 @@ public class Menu
                             player.openInventory(m.createMenu(player));
                             main.crafting.put(player.getName(), parameter);
                         }
-                    }.runTaskLater(main, 1L);
+                    }.runTaskLater(main, 0L);
                     
                 }
                 else
@@ -107,17 +109,22 @@ public class Menu
                         final CraftingInventory ci = (CraftingInventory) player.openWorkbench(null, true).getTopInventory();
                         main.crafting.put(player.getName(), parameter);
                         // Fetch the EnderRecipe
-                        EnderRecipe sr = main.getRecipeMap().get(parameter);
+                        EnderRecipe er = main.getRecipeMap().get(parameter);
                         // Fetch the ingredients Map
-                        Map<String, Integer> recipeMap = sr.getIngredientsMap();
+                        Map<String, Integer> recipeMap = er.getIngredientsMap();
                         List<String> lore = new ArrayList<String>();
                         // Lore building
                         for(Map.Entry<String, Integer> ingredient : recipeMap.entrySet())
                         {
-                            lore.add(ChatColor.RED+ingredient.getKey()+" x "+ingredient.getValue());
+                            lore.add(ChatColor.RED+"(x"+ingredient.getValue()+") "+ingredient.getKey());
                         }
-                        final ItemStack list = new ItemStack(Material.PAPER);
-                        ItemMeta listMeta = list.getItemMeta();
+                        main.replaceNames(lore);
+                        final ItemStack list = new ItemStack(Material.ENCHANTED_BOOK);
+                        EnchantmentStorageMeta listMeta = (EnchantmentStorageMeta) list.getItemMeta();
+                        for(Enchantment e : listMeta.getStoredEnchants().keySet())
+                        {
+                            listMeta.removeStoredEnchant(e);
+                        }
                         listMeta.setDisplayName(parameter);
                         listMeta.setLore(lore);
                         list.setItemMeta(listMeta);

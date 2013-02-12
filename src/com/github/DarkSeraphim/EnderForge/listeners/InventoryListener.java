@@ -4,11 +4,14 @@ import com.github.DarkSeraphim.EnderForge.EnderForge;
 import com.github.DarkSeraphim.EnderForge.EnderRecipe;
 import com.github.DarkSeraphim.EnderForge.menu.Menu;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -21,6 +24,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -31,11 +35,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class InventoryListener implements Listener
 {
     
-    private EnderForge sc;
+    private EnderForge ef;
     
     public InventoryListener(EnderForge sc)
     {
-        this.sc = sc;
+        this.ef = sc;
     }
     
     @EventHandler
@@ -43,15 +47,15 @@ public class InventoryListener implements Listener
     {
         if(event.getPlayer() instanceof Player == false) return;
         Player player = (Player) event.getPlayer();
-        boolean isCrafting = sc.crafting.get(player.getName()) != null;
+        boolean isCrafting = ef.crafting.get(player.getName()) != null;
         if(isCrafting)
         {
-            String mode = sc.crafting.get(player.getName());
-            if(sc.getMenuManager().getMenu(mode) != null)
+            String mode = ef.crafting.get(player.getName());
+            if(ef.getMenuManager().getMenu(mode) != null)
             {
                 // In menu
                 
-                if(sc.getRecipeMap().get(mode) != null)
+                if(ef.getRecipeMap().get(mode) != null)
                 {
                     
                 }
@@ -64,7 +68,7 @@ public class InventoryListener implements Listener
     {
         if(event.getPlayer() instanceof Player == false) return;
         final Player player = (Player) event.getPlayer();
-        boolean isCrafting = sc.crafting.get(player.getName()) != null;
+        boolean isCrafting = ef.crafting.get(player.getName()) != null;
         if(isCrafting)
         {
             event.getInventory().clear();
@@ -75,10 +79,10 @@ public class InventoryListener implements Listener
                     Inventory i = player.getOpenInventory().getTopInventory();
                     if(i == null || i.getType() == InventoryType.CRAFTING)
                     {
-                        sc.crafting.put(player.getName(), null);
+                        ef.crafting.put(player.getName(), null);
                     }
                 }
-            }.runTaskLater(sc, 2L);
+            }.runTaskLater(ef, 2L);
         }
     }
     
@@ -87,11 +91,11 @@ public class InventoryListener implements Listener
     {
         if(event.getWhoClicked() instanceof Player == false) return;
         Player player = (Player) event.getWhoClicked();
-        boolean isCrafting = sc.crafting.get(player.getName()) != null;
+        boolean isCrafting = ef.crafting.get(player.getName()) != null;
         if(isCrafting)
         {
-            String mode = sc.crafting.get(player.getName());
-            Menu m = sc.getMenuManager().getMenu(mode);
+            String mode = ef.crafting.get(player.getName());
+            Menu m = ef.getMenuManager().getMenu(mode);
             if(m != null)
             {
                 event.setCancelled(true);
@@ -103,83 +107,115 @@ public class InventoryListener implements Listener
     }
     
     @EventHandler(priority=EventPriority.HIGH)
-    public void addIngredient(InventoryClickEvent event)
+    public void addIngredient(final InventoryClickEvent event)
     {
-        sc.debug("click");
+        ef.debug("click");
         if(event.getWhoClicked() instanceof Player == false) return;
-        Player player = (Player) event.getWhoClicked();
-        sc.debug("its in: "+sc.crafting.get(player.getName()));
-        boolean isCrafting = sc.crafting.get(player.getName()) != null;
+        final Player player = (Player) event.getWhoClicked();
+        ef.debug("its in: "+ef.crafting.get(player.getName()));
+        boolean isCrafting = ef.crafting.get(player.getName()) != null;
         if(isCrafting)
         {
-            String mode = sc.crafting.get(player.getName());
-            if(sc.getRecipeMap().get(mode) != null)
+            String mode = ef.crafting.get(player.getName());
+            if(ef.getRecipeMap().get(mode) != null)
             {
                 if(event.getRawSlot() > 9)
                 {
                     return;
                 }
                 // In crafting
-                CraftingInventory ci = (CraftingInventory) event.getInventory();
-                ci.setMaxStackSize(1);
+                final CraftingInventory ci = (CraftingInventory) event.getInventory();
+                //ci.setMaxStackSize(1);
                 // Fetch the EnderRecipe
-                EnderRecipe sr = sc.getRecipeMap().get(mode);
+                final EnderRecipe er = ef.getRecipeMap().get(mode);
                 // Fetch the ingredients Map
-                Map<String, Integer> recipeMap = sr.getIngredientsMap();
-                List<String> lore = new ArrayList<String>();
-                List<ItemStack> left = sr.getIngredients();
-                for(ItemStack i : ci.getMatrix())
-                {
-                    for(ItemStack l : left)
-                    {
-                        if(l.isSimilar(i))
-                        {
-                            left.remove(l);
-                            break;
-                        }
-                    }
-                }
-                List<String> loreofleft = new ArrayList<String>();
-                ItemMeta meta;
-                for(ItemStack i : left)
-                {
-                    meta = i.getItemMeta();
-                    loreofleft.add(meta.hasDisplayName() ? meta.getDisplayName() : i.getType().name().replace('_', ' ').toLowerCase()
-                            +":"+(i.getType().getMaxDurability() > 0 ? i.getData().getData() : i.getDurability()));
-                }
-                // Lore building
-                String pre = "";
+                
+                List<String> lore = getRecipeLore(er, ci.getMatrix());
+                
                 boolean done = true;
-                for(Entry<String, Integer> ingredient : recipeMap.entrySet())
+                for(String s : lore)
                 {
-                    if(loreofleft.contains(ingredient.getKey()))
+                    if(s.startsWith(ChatColor.RED.toString()))
                     {
-                        pre = ChatColor.RED.toString();
                         done = false;
+                        break;
                     }
-                    else
-                    {
-                        pre = ChatColor.GREEN.toString();
-                    }
-                    lore.add(pre+ingredient.getKey()+" (x "+ingredient.getValue()+")");
                 }
-                ItemStack list = new ItemStack(Material.PAPER);
-                ItemMeta listMeta = list.getItemMeta();
+                ef.replaceNames(lore);
+                final ItemStack list = new ItemStack(Material.ENCHANTED_BOOK);
+                EnchantmentStorageMeta listMeta = (EnchantmentStorageMeta) list.getItemMeta();
+                for(Enchantment e : listMeta.getStoredEnchants().keySet())
+                {
+                    listMeta.removeStoredEnchant(e);
+                }
                 listMeta.setDisplayName(mode);
                 listMeta.setLore(lore);
                 list.setItemMeta(listMeta);
+                
+                ItemStack current = event.getCursor();
+                ef.debug(current.toString());
+                ItemStack[] aftermatrix = (ItemStack[])ci.getMatrix().clone();
+                for(int i = 0; i < aftermatrix.length; i++)
+                {
+                    if(aftermatrix[i] == null || aftermatrix[i].getType() == Material.AIR)
+                    {
+                        aftermatrix[i] = current;
+                        break;
+                    }
+                }
+                List<String> before = getLoreOfLeft(er, ci.getMatrix());
+                List<String> after = getLoreOfLeft(er, aftermatrix);
+                int beforeN = Collections.frequency(before, current.getTypeId()+":"+EnderRecipe.getIdentifier(current));
+                int afterN = Collections.frequency(after, current.getTypeId()+":"+EnderRecipe.getIdentifier(current));
+                ef.debug(beforeN+":"+afterN);
+                if(afterN < beforeN)
+                {
+                    ef.debug("new item");
+                    player.playSound(player.getLocation(), Sound.ORB_PICKUP, 1f, 31f);
+                }
                 // Set resultslot to ingredients list
                 ci.setResult(list);
-                sc.debug(done+":"+event.getRawSlot());
+                ef.debug(done+":"+event.getRawSlot());
                 if(!done && event.getRawSlot() == 0)
                 {
-                    sc.debug("done apparently");
+                    ef.debug("done apparently");
                     event.setCancelled(true);
                     event.setResult(Event.Result.DENY);
-                    if(ci.getHolder() instanceof Player)
+                    player.updateInventory();
+                }
+                else
+                {
+                    new BukkitRunnable()
                     {
-                        ((Player)ci.getHolder()).updateInventory();
-                    }
+                        @Override
+                        public void run()
+                        {
+                            List<String> lore = getRecipeLore(er, ci.getMatrix());
+                            boolean done = true;
+                            for(String s : lore)
+                            {
+                                if(s.startsWith(ChatColor.RED.toString()))
+                                {
+                                    done = false;
+                                    break;
+                                }
+                            }
+                            if(!done)
+                            {
+                                ItemMeta meta = list.getItemMeta();
+                                ef.replaceNames(lore);
+                                meta.setLore(lore);
+                                list.setItemMeta(meta);
+                                ef.debug("Debug much?");
+                                ci.setResult(list);
+                            }
+                            else
+                            {
+                                ci.setResult(er.getResult());
+                            }
+                            player.updateInventory();
+                        }
+                    }.runTaskLater(ef, 2L);
                 }
             }
         }
@@ -189,5 +225,49 @@ public class InventoryListener implements Listener
     public void onClick2(InventoryClickEvent e)
     {
         //sc.debug("DEBUG cancel state: "+e.isCancelled());
+    }
+    
+    public static List<String> getRecipeLore(EnderRecipe er, ItemStack[] matrix)
+    {
+        Map<String, Integer> recipeMap = er.getIngredientsMap();
+        List<String> lore = new ArrayList<String>();
+        // Lore building
+        List<String> loreofleft = getLoreOfLeft(er, matrix);
+        String pre = "";
+        for(Entry<String, Integer> ingredient : recipeMap.entrySet())
+        {
+            if(loreofleft.contains(ingredient.getKey()))
+            {
+                pre = ChatColor.RED.toString();
+            }
+            else
+            {
+                pre = ChatColor.GREEN.toString();
+            }
+            lore.add(pre+"("+ingredient.getValue()+" x )"+ingredient.getKey());
+        }
+        return lore;
+    }
+    
+    public static List<String> getLoreOfLeft(EnderRecipe er, ItemStack[] matrix)
+    {
+        List<ItemStack> left = er.getIngredients();
+        for(ItemStack i : matrix)
+        {
+            for(ItemStack l : left)
+            {
+                if(l.isSimilar(i))
+                {
+                    left.remove(l);
+                    break;
+                }
+            }
+        }
+        List<String> loreofleft = new ArrayList<String>();
+        for(ItemStack i : left)
+        {
+            loreofleft.add(i.getTypeId()+":"+EnderRecipe.getIdentifier(i));
+        }
+        return loreofleft;
     }
 }

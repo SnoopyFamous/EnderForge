@@ -87,6 +87,7 @@ public class EnderRecipe
     public void registerRecipe()
     {
         ShapelessRecipe sr = new ShapelessRecipe(this.result);
+        System.out.println("Data registered for recipe: "+getIdentifier(this.result));
         for(ItemStack i : ingredients)
         {
             sr.addIngredient(i.getAmount(), i.getType(), (i.getType().getMaxDurability() > 0 ? (int)i.getData().getData() : i.getDurability()));
@@ -112,26 +113,18 @@ public class EnderRecipe
         ItemMeta meta;
         for(ItemStack ing : this.ingredients)
         {
-            meta = ing.getItemMeta();
             String name;
-            if(meta.hasDisplayName())
+            name = ""+ing.getTypeId();
+            int data;
+            if(ing.getType().getMaxDurability() > 0)
             {
-                name = meta.getDisplayName();
+                data = (int)ing.getData().getData();
             }
             else
             {
-                name = ing.getType().name().replace('_', ' ').toLowerCase();
-                int data;
-                if(ing.getType().getMaxDurability() > 0)
-                {
-                    data = (int)ing.getData().getData();
-                }
-                else
-                {
-                    data = ing.getDurability();
-                }
-                name += ":"+data;
+                data = ing.getDurability();
             }
+            name += ":"+data;
             if(loreMap.containsKey(name))
             {
                 loreMap.put(name, loreMap.get(name)+1);

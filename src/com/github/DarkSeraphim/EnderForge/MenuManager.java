@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.meta.ItemMeta;
 
 /**
  *
@@ -94,11 +96,28 @@ public class MenuManager
                 String rec = acpar[1];
                 if(linkage.equals("item"))
                 {
+                    EnderRecipe er = sc.getRecipeMap().get(rec);
+                    ItemMeta recmet = er.getResult().getItemMeta();
                     ing = new ArrayList<String>();
-                    for(Entry<String, Integer> e : sc.getRecipeMap().get(rec).getIngredientsMap().entrySet())
+                    for(Entry<Enchantment, Integer> ench : recmet.getEnchants().entrySet())
                     {
-                        ing.add(ChatColor.RESET+e.getKey()+" (x"+e.getValue()+")");
+                        String en = EnderEnchantment.getEName(ench.getKey());
+                        en = en.substring(0,1).toUpperCase()+en.substring(1);
+                        ing.add(ChatColor.GRAY+en+" "+EnderEnchantment.toRoman(ench.getValue()));
                     }
+                    if(ing.size() > 0) ing.add("");
+                    ing.addAll(recmet.getLore());
+                    if(ing.size() > 0) ing.add("");
+                    ing.add("Recipe: ");
+                    for(Entry<String, Integer> e : er.getIngredientsMap().entrySet())
+                    {
+                        ing.add(ChatColor.WHITE+"("+e.getValue()+"x) "+ChatColor.RESET+ChatColor.GRAY+e.getKey());
+                    }
+                    sc.replaceNames(ing);
+                }
+                else if(linkage.equals("menu") && rec.equals("back") && !menu.equals(this.MainMenu))
+                {
+                    action = linkage+"|"+parent;
                 }
             }
             catch(Exception ex){/*Ignore*/}

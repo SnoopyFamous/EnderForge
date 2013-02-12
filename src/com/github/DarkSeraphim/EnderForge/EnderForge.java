@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -25,6 +26,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -46,11 +48,13 @@ public class EnderForge extends JavaPlugin
     
     MenuManager mm;
     
-    final Logger debugger = Logger.getLogger("[SC-DEBUG]");
+    final Logger debugger = Logger.getLogger("[EF-DEBUG]");
     
     public boolean debug = false;
     
     public boolean changed = false;
+    
+    private HashMap<String, String> itemnames = new HashMap<String, String>();
     
     @Override
     public void onEnable()
@@ -120,6 +124,8 @@ public class EnderForge extends JavaPlugin
             }
         }
         loadRecipes(recipeMap);
+        
+        loadReplacements();
         
         loadCraftingMedia();
         
@@ -217,7 +223,9 @@ public class EnderForge extends JavaPlugin
                 i = new ItemStack(id, amount);
                 if(i.getType().getMaxDurability() > 0 )
                 {
-                    i.getData().setData((byte)data);
+                    MaterialData mdata = i.getData();
+                    mdata.setData((byte)data);
+                    i.setData(mdata);
                 }
                 else 
                 {
@@ -254,14 +262,41 @@ public class EnderForge extends JavaPlugin
                 {
                     continue;
                 }
-                EnderRecipe sr = new EnderRecipe(i)
+                EnderRecipe er = new EnderRecipe(i)
                         .setName(recipeEntry.getKey())
                         .setLore(recipe.getStringList("lore").toArray(new String[0]))
                         .addEnchantments(enchs)
                         .addIngredients(items.toArray(new ItemStack[0]));
-                this.recipeMap.put(recipeEntry.getKey(), sr);
-                sr.registerRecipe();
+                this.recipeMap.put(recipeEntry.getKey(), er);
+                er.registerRecipe();
             }
+        }
+    }
+    
+    private void loadReplacements()
+    {
+        File repFile = new File(getDataFolder(), File.separator+"itemnames.yml");
+        YamlConfiguration yc = YamlConfiguration.loadConfiguration(repFile);
+        debug("loading replacements");
+        if(!repFile.exists())
+        {
+            try
+            {
+                repFile.createNewFile();
+                InputStream defRep = getResource("itemnames.yml");
+                if(defRep != null)
+                {
+                    YamlConfiguration defR = YamlConfiguration.loadConfiguration(defRep);
+                    yc.setDefaults(defR);
+                    yc.save(repFile);
+                }
+            }catch(IOException ex){/*Ignore*/}
+        }
+        debug("Replacedments plox? "+yc.getKeys(false));
+        for(String replace : yc.getKeys(false))
+        {
+            debug("Putting in "+replace+" for "+yc.getString(replace));
+            this.itemnames.put(replace, yc.getString(replace));
         }
     }
     
@@ -301,7 +336,7 @@ public class EnderForge extends JavaPlugin
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
     {
-        if(cmd.getName().equalsIgnoreCase("sc"))
+        if(cmd.getName().equalsIgnoreCase("ef"))
         {
             if(args.length == 1)
             {
@@ -369,9 +404,22 @@ public class EnderForge extends JavaPlugin
     
     public void debug(String msg)
     {
-        //if(this.debug)
+        if(this.debug)
         {
-            log.info(msg);
+            //log.info(msg);
+        }
+    }
+    
+    public void replaceNames(List<String> lore)
+    {
+        for(String l : lore)
+        {
+            int index = lore.indexOf(l);
+            for(Entry<String, String>replacing : this.itemnames.entrySet())
+            {
+                l = l.replace(replacing.getKey(), replacing.getValue());
+            }
+            lore.set(index, l);
         }
     }
     
