@@ -3,6 +3,8 @@ package com.github.DarkSeraphim.EnderForge.listeners;
 import com.github.DarkSeraphim.EnderForge.EnderForge;
 import com.github.DarkSeraphim.EnderForge.EnderRecipe;
 import java.util.List;
+import java.util.logging.Level;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Material;
@@ -43,9 +45,10 @@ public class CraftingListener implements Listener
         if(resultMeta.hasDisplayName())
         {
             String name = resultMeta.getDisplayName();
-            if(ef.getRecipeMap().containsKey(ChatColor.stripColor(name)))
+            name = EnderForge.translateAlternateColorCodesBackwards('&', name);
+            if(ef.getRecipeMap().containsKey(name))
             {
-                int data = EnderRecipe.getIdentifier(ef.getRecipeMap().get(ChatColor.stripColor(name)).getResult());
+                int data = EnderRecipe.getIdentifier(ef.getRecipeMap().get(name).getResult());
                 int resultData = EnderRecipe.getIdentifier(result);
                 if(data == resultData || result == null)
                 {
@@ -73,7 +76,7 @@ public class CraftingListener implements Listener
         ItemMeta resultMeta = event.getRecipe().getResult().getItemMeta();
         if(resultMeta.hasDisplayName())
         {
-            final String name = resultMeta.getDisplayName();
+            final String name = EnderForge.translateAlternateColorCodesBackwards('&', ChatColor.stripColor(resultMeta.getDisplayName()));
             if(!name.equals(ef.crafting.get(player.getName())))
             {
                 event.getInventory().setResult(null);
@@ -122,7 +125,7 @@ public class CraftingListener implements Listener
                 // Fetch the EnderRecipe
                 EnderRecipe er = ef.getRecipeMap().get(mode);
                 
-                List<String> lore = InventoryListener.getRecipeLore(er, ci.getMatrix());
+                List<String> lore = ef.getRecipeLore(er, ci.getMatrix());
                 boolean done = true;
                 for(String s : lore)
                 {
@@ -139,7 +142,8 @@ public class CraftingListener implements Listener
                     event.setResult(Event.Result.DENY);
                     return;
                 }
-                
+                ef.debug(String.format("Result is here %1$s", ci.getResult() != null ? ci.getResult().toString() : "null"));
+                ItemStack is = er.getResult();
                 event.setCursor(er.getResult());
                 event.getInventory().setResult(null);
                 ItemStack[] matrix = event.getInventory().getMatrix();

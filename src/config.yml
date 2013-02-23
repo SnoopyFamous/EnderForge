@@ -1,15 +1,14 @@
 # SuperCrafting config
 
-# The type of block that acts as the medium
-crafting-medium-type: ender portal
-
 # Main menu
 main-menu: 'Ender Forge'
 
 #Registered blocks, sorted per world
-blocks:
- world:
-  - 0,0,0
+forge:
+  world: world
+  x: 0
+  y: 0
+  z: 0
   
 # Menu layout
 menus:
@@ -41,7 +40,3 @@ menus:
 #     This would (if not used) enable the 'back' slot (slot 18)
 #     Defaults to the main menu
     parent: 'Ender Forge'
-      
-      
-# Debug - for more messages about the flow
-debug-enabled: true

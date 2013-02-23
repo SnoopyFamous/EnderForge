@@ -4,10 +4,12 @@ import com.github.DarkSeraphim.EnderForge.EnderForge;
 import com.github.DarkSeraphim.EnderForge.EnderRecipe;
 import com.github.DarkSeraphim.EnderForge.menu.Menu;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -17,6 +19,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -26,6 +29,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.material.MaterialData;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
@@ -172,16 +176,43 @@ public class InventoryListener implements Listener
                 {
                     ef.debug("new item");
                     player.playSound(player.getLocation(), Sound.ORB_PICKUP, 1f, 31f);
+                    if(event.getCursor().getType().getMaxDurability() > 0)
+                    {
+                        ItemStack cursor = event.getCursor();
+                        String name = cursor.getItemMeta().hasDisplayName() ? cursor.getItemMeta().getDisplayName() : "";
+                        if(!name.isEmpty())
+                        {
+                            short data = ef.getActualData(ChatColor.stripColor(name));
+                            MaterialData mData = cursor.getData();
+                            mData.setData((byte)data);
+                            cursor.setData(mData);
+                        }
+                    }
                 }
                 // Set resultslot to ingredients list
                 ci.setResult(list);
                 ef.debug(done+":"+event.getRawSlot());
+                ef.debug("before");
+                for(String s : before)
+                {
+                    ef.debug("* "+s);
+                }
+                ef.debug("after");
+                for(String s : after)
+                {
+                    ef.debug("* "+s);
+                }
                 if(!done && event.getRawSlot() == 0)
                 {
                     ef.debug("done apparently");
                     event.setCancelled(true);
                     event.setResult(Event.Result.DENY);
                     player.updateInventory();
+                }
+                else if(event.getRawSlot() == 0)
+                {
+                    CraftItemEvent cie = new CraftItemEvent(er.getRecipe(), player.getOpenInventory(), InventoryType.SlotType.RESULT, 0, false, false);
+                    Bukkit.getPluginManager().callEvent(cie);
                 }
                 else
                 {
@@ -215,19 +246,13 @@ public class InventoryListener implements Listener
                             }
                             player.updateInventory();
                         }
-                    }.runTaskLater(ef, 2L);
+                    }.runTaskLater(ef, 3L);
                 }
             }
         }
     }
     
-    @EventHandler(priority=EventPriority.MONITOR)
-    public void onClick2(InventoryClickEvent e)
-    {
-        //sc.debug("DEBUG cancel state: "+e.isCancelled());
-    }
-    
-    public static List<String> getRecipeLore(EnderRecipe er, ItemStack[] matrix)
+    public List<String> getRecipeLore(EnderRecipe er, ItemStack[] matrix)
     {
         Map<String, Integer> recipeMap = er.getIngredientsMap();
         List<String> lore = new ArrayList<String>();
@@ -249,17 +274,35 @@ public class InventoryListener implements Listener
         return lore;
     }
     
-    public static List<String> getLoreOfLeft(EnderRecipe er, ItemStack[] matrix)
+    public List<String> getLoreOfLeft(EnderRecipe er, ItemStack[] matrix)
     {
         List<ItemStack> left = er.getIngredients();
+        ItemMeta iMeta;
+        ItemMeta lMeta;
         for(ItemStack i : matrix)
         {
             for(ItemStack l : left)
             {
-                if(l.isSimilar(i))
+                if(i == null) continue;
+                //if(l.isSimilar(i))
+                if(l.getType() == i.getType() && EnderRecipe.getIdentifier(l) == EnderRecipe.getIdentifier(i))
                 {
                     left.remove(l);
                     break;
+                }
+                else if(i.getType().getMaxDurability() > 0 && l.getType().getMaxDurability() > 0)
+                {
+                    iMeta = i.getItemMeta();
+                    lMeta = l.getItemMeta();
+                    List<String> ident = Arrays.asList(l.getType().getId()+":"+EnderRecipe.getIdentifier(l));
+                    ef.replaceNames(ident);
+                    String lName = ident.get(0);
+                    String iName = ChatColor.stripColor(iMeta.getDisplayName());
+                    if(lName.equals(iName) && iName.length() < iMeta.getDisplayName().length())
+                    {
+                        left.remove(l);
+                        break;
+                    }
                 }
             }
         }

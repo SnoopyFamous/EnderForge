@@ -16,38 +16,34 @@ import org.bukkit.inventory.Inventory;
  */
 public class InteractionListener implements Listener
 {
-    private EnderForge sc;
+    private EnderForge ef;
     
     public InteractionListener(EnderForge sc)
     {
-        this.sc = sc;
+        this.ef = sc;
     }
 
     @EventHandler(ignoreCancelled=true)
-    public void onSuperAnvilClick(PlayerInteractEvent e)
+    public void onEnderForgeClick(PlayerInteractEvent e)
     {
         if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         Block b = e.getClickedBlock();
-        String loc = new StringBuilder().append(b.getX()).append(",").append(b.getY()).append(",").append(b.getZ()).toString();
-        String world = b.getWorld().getName();
-        if(sc.getMedia().containsKey(world))
+        String loc = new StringBuilder(b.getWorld().getName()).append(",").append(b.getX()).append(",").append(b.getY()).append(",").append(b.getZ()).toString();
+        if(ef.getForgeLocation().equals(loc))
         {
-            if(sc.getMedia().get(world).contains(loc))
+            Menu m = ef.getMenuManager().getMenu(ef.getMenuManager().MainMenu);
+            if(m != null)
             {
-                Menu m = sc.getMenuManager().getMenu(sc.getMenuManager().MainMenu);
-                if(m != null)
-                {
-                    e.getPlayer().playSound(e.getClickedBlock().getLocation(), Sound.IRONGOLEM_HIT, 1f, 31f);
-                    Inventory inv = m.createMenu(e.getPlayer());
-                    e.getPlayer().openInventory(inv);
-                    sc.crafting.put(e.getPlayer().getName(), sc.getMenuManager().MainMenu);
-                }
-                else
-                {
-                    sc.debug("Menu '"+sc.getMenuManager().MainMenu+"' found, but null");
-                }
-                e.setCancelled(true);
+                e.getPlayer().playSound(e.getClickedBlock().getLocation(), Sound.IRONGOLEM_HIT, 1f, 31f);
+                Inventory inv = m.createMenu(e.getPlayer());
+                e.getPlayer().openInventory(inv);
+                ef.crafting.put(e.getPlayer().getName(), ef.getMenuManager().MainMenu);
             }
+            else
+            {
+                ef.debug("Menu '"+ef.getMenuManager().MainMenu+"' found, but null");
+            }
+            e.setCancelled(true);
         }
     }
     

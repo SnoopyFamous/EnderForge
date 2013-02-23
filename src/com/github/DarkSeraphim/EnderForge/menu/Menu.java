@@ -13,6 +13,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -43,14 +44,14 @@ public class Menu
         this.parent = parent;
     }
     
-    public void setItem(int index, int id, String title, String action, List<String> lore) throws IllegalArgumentException
+    public void setItem(int index, int id, short dam, String title, String action, List<String> lore) throws IllegalArgumentException
     {
         String[] acpar = action.split("\\|");
         if(acpar.length != 2) return;
         if(index < 0 || index > 26) throw new IllegalArgumentException("Index is "+(index < 0 ? "too small" : "too large"));
-        ItemStack i = new ItemStack(id);
-        ItemMeta meta = i.getItemMeta();
-        meta.setDisplayName(title);
+        ItemStack i = new ItemStack(id, 1, dam);
+        ItemMeta meta = i.getItemMeta() == null ? i.getItemMeta() : Bukkit.getItemFactory().getItemMeta(i.getType());
+        meta.setDisplayName(ChatColor.RESET+title);
         meta.setLore(lore);
         i.setItemMeta(meta);
         this.contents[index] = i;
@@ -110,6 +111,11 @@ public class Menu
                         main.crafting.put(player.getName(), parameter);
                         // Fetch the EnderRecipe
                         EnderRecipe er = main.getRecipeMap().get(parameter);
+                        main.debug("Parameter: "+parameter);
+                        for(String key : main.getRecipeMap().keySet())
+                        {
+                            main.debug("key: "+key);
+                        }
                         // Fetch the ingredients Map
                         Map<String, Integer> recipeMap = er.getIngredientsMap();
                         List<String> lore = new ArrayList<String>();
@@ -145,7 +151,6 @@ public class Menu
     
     public Inventory createMenu(Player holder)
     {
-        System.out.println("name: "+this.name);
         Inventory inv = Bukkit.createInventory(holder, 27, ChatColor.translateAlternateColorCodes('&',this.name));
         inv.setContents(this.contents);
         return inv;

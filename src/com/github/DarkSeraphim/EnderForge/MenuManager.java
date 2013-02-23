@@ -81,7 +81,28 @@ public class MenuManager
             {
                 continue;
             }
-            int icon = items.getInt(item+".icon", -1);
+            String icondata = items.getString(item+".icon", "280");
+            int icon;
+            short data;
+            try
+            {
+                if(icondata.contains(":"))
+                {
+                    String[] icda = icondata.split(":",2);
+                    icon = Integer.parseInt(icda[0]);
+                    data = Short.parseShort(icda[1]);
+                }
+                else
+                {
+                    icon = Integer.parseInt(icondata);
+                    data = 0;
+                }
+            }
+            catch(NumberFormatException ex)
+            {
+                icon = 280;
+                data = 0;
+            }
             String name = items.getString(item+".icon-name", "");
             String action = items.getString(item+".link", "");
             if(icon < 1 || name.isEmpty() || action.isEmpty())
@@ -102,7 +123,6 @@ public class MenuManager
                     for(Entry<Enchantment, Integer> ench : recmet.getEnchants().entrySet())
                     {
                         String en = EnderEnchantment.getEName(ench.getKey());
-                        en = en.substring(0,1).toUpperCase()+en.substring(1);
                         ing.add(ChatColor.GRAY+en+" "+EnderEnchantment.toRoman(ench.getValue()));
                     }
                     if(ing.size() > 0) ing.add("");
@@ -123,7 +143,7 @@ public class MenuManager
             catch(Exception ex){/*Ignore*/}
             try
             {
-                m.setItem(index, icon, ChatColor.translateAlternateColorCodes('&', name), action, ing);
+                m.setItem(index, icon, data, ChatColor.translateAlternateColorCodes('&', name), action, ing);
             }
             catch(IllegalArgumentException ex)
             {

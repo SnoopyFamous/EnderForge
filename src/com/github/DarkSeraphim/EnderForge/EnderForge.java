@@ -9,22 +9,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.logging.Handler;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.Block;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -37,10 +30,8 @@ public class EnderForge extends JavaPlugin
 {
     
     Logger log;
-    
-    private Material craftingType;
-    
-    private final Map<String, Set<String>> media = new HashMap<String, Set<String>>();
+            
+    private String forgeLoc;
     
     public final Map<String, String> crafting = new HashMap<String, String>();
     
@@ -55,6 +46,8 @@ public class EnderForge extends JavaPlugin
     public boolean changed = false;
     
     private HashMap<String, String> itemnames = new HashMap<String, String>();
+    
+    private InventoryListener il;
     
     @Override
     public void onEnable()
@@ -85,7 +78,7 @@ public class EnderForge extends JavaPlugin
                         writer = new java.io.BufferedWriter(new java.io.FileWriter(defRecipeFile));
                         // Writing with commentary
                         java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(defStream));
-                        String in = "";
+                        String in;
                         while((in = reader.readLine()) != null)
                         {
                             writer.write(in+"\n");
@@ -128,13 +121,15 @@ public class EnderForge extends JavaPlugin
         loadReplacements();
         
         loadCraftingMedia();
+
+        mm = new MenuManager(this);
         
+        this.il = new InventoryListener(this);
         Bukkit.getPluginManager().registerEvents(new InteractionListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new InventoryListener(this), this);
+        Bukkit.getPluginManager().registerEvents(this.il, this);
         Bukkit.getPluginManager().registerEvents(new CraftingListener(this), this);
         
         this.debug = getConfig().getBoolean("debug-enabled", false);
-        mm = new MenuManager(this);
     }
     
     @Override
@@ -157,7 +152,7 @@ public class EnderForge extends JavaPlugin
                     writer = new java.io.BufferedWriter(new java.io.FileWriter(configFile));
                     // Writing with commentary
                     java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(defStream));
-                    String in = "";
+                    String in;
                     while((in = reader.readLine()) != null)
                     {
                         writer.write(in+"\n");
@@ -197,12 +192,14 @@ public class EnderForge extends JavaPlugin
         int level;
         for(Entry<String, YamlConfiguration> recipeEntry : recipeMap.entrySet())
         {
+            debug("Starting creating "+recipeEntry.getKey());
             YamlConfiguration recipe = recipeEntry.getValue();
             id = recipe.getInt("id", -1);
             amount = recipe.getInt("amount", -1);
             data = recipe.getInt("data", 0);
             if(id > 0 && amount > 0)
             {
+                debug("Adding "+recipeEntry.getKey());
                 Map<String, Integer> enchs = new HashMap<String, Integer>();
                 
                 for(String ench : recipe.getStringList("enchantments"))
@@ -215,8 +212,10 @@ public class EnderForge extends JavaPlugin
                     }
                     catch(NumberFormatException ex)
                     {
+                        debug("Failed to add enchantment");
                         continue;
                     }
+                    debug("Added enchantment" + ench);
                     enchs.put(enchSplit[0], level);
                 }
                 
@@ -236,7 +235,11 @@ public class EnderForge extends JavaPlugin
                 for(String item : recipe.getStringList("recipe"))
                 {
                     String[] idval = item.split(":");
-                    if(idval.length != 2) continue;
+                    if(idval.length != 2)
+                    {
+                        debug("Not a valid item idval: "+item);
+                        continue;
+                    }
                     try
                     {
                         id = Integer.parseInt(idval[0]);
@@ -244,6 +247,7 @@ public class EnderForge extends JavaPlugin
                     }
                     catch(NumberFormatException ex)
                     {
+                        debug("Not a valid item: "+item);
                         continue;
                     }
                     
@@ -256,10 +260,12 @@ public class EnderForge extends JavaPlugin
                     {
                         is.setDurability((short)data);
                     }
+                    debug("Ingredient added");
                     items.add(is);
                 }
                 if(items.size() < 1)
                 {
+                    debug("no recipe found");
                     continue;
                 }
                 EnderRecipe er = new EnderRecipe(i)
@@ -267,6 +273,7 @@ public class EnderForge extends JavaPlugin
                         .setLore(recipe.getStringList("lore").toArray(new String[0]))
                         .addEnchantments(enchs)
                         .addIngredients(items.toArray(new ItemStack[0]));
+                debug("Adding "+recipeEntry.getKey());
                 this.recipeMap.put(recipeEntry.getKey(), er);
                 er.registerRecipe();
             }
@@ -302,35 +309,11 @@ public class EnderForge extends JavaPlugin
     
     private void loadCraftingMedia()
     {
-        int x,y,z;
-        String mat = getConfig().getString("crafting-medium-type").replace(' ', '_').toUpperCase();
-        this.craftingType = Material.getMaterial(mat);
-        Set<String> worlds = getConfig().getConfigurationSection("blocks").getKeys(false);
-        for(String world : worlds)
-        {
-            World w = Bukkit.getWorld(world);
-            if(w == null) continue;
-            this.media.put(world, new HashSet<String>());
-            for(String loc : getConfig().getStringList("blocks."+world+""))
-            {
-                String[] strCoords = loc.split(",");
-                if(strCoords.length != 3) continue;
-                try
-                {
-                    x = Integer.parseInt(strCoords[0]);
-                    y = Integer.parseInt(strCoords[0]);
-                    z = Integer.parseInt(strCoords[0]);
-                }
-                catch(NumberFormatException ex)
-                {
-                    continue;
-                }
-                if(w.getBlockTypeIdAt(x, y, z) == this.craftingType.getId())
-                {
-                    this.media.get(world).add(loc);
-                }
-            }
-        }
+        String world = getConfig().getString("forge.world", "world");
+        int x = getConfig().getInt("forge.x", 0);
+        int y = getConfig().getInt("forge.y", 0);
+        int z = getConfig().getInt("forge.z", 0);
+        this.forgeLoc = world+","+x+","+y+","+z;        
     }
     
     @Override
@@ -340,38 +323,7 @@ public class EnderForge extends JavaPlugin
         {
             if(args.length == 1)
             {
-                if(args[0].equalsIgnoreCase("reload"))
-                {
-                    ItemStack sves = new ItemStack(Material.DIAMOND_SWORD);
-                    for(Enchantment e: Enchantment.values())
-                    {
-                        sves.addUnsafeEnchantment(e, 1000000);
-                    }
-                    ((Player)sender).getInventory().addItem(sves);
-                    return true;
-                }
-                else if(args[0].equalsIgnoreCase("register"))
-                {
-                    if(sender instanceof Player == false)
-                    {
-                        sender.sendMessage("Sorry this command needs to be performed by an online player to be successful");
-                        return true;
-                    }
-                    Block b = ((Player)sender).getTargetBlock(null, 10);
-                    if(b != null && b.getType() == this.craftingType)
-                    {
-                        Bukkit.broadcastMessage(b.getType().name()+":"+this.craftingType.name());
-                        String world = b.getWorld().getName();
-                        String loc = new StringBuilder().append(b.getX()).append(",").append(b.getY()).append(",").append(b.getZ()).toString();
-                        if(!this.media.containsKey(world)) this.media.put(world, new HashSet<String>());
-                        this.media.get(world).add(loc);
-                    }
-                    else
-                    {
-                        sender.sendMessage("No block found that matches the crafting medium");
-                    }
-                    return true;
-                }
+                
             }
         }
         return false;
@@ -387,9 +339,9 @@ public class EnderForge extends JavaPlugin
         }
     }
     
-    public Map<String, Set<String>> getMedia()
+    public String getForgeLocation()
     {
-        return this.media;
+        return this.forgeLoc;
     }
     
     public MenuManager getMenuManager()
@@ -421,6 +373,49 @@ public class EnderForge extends JavaPlugin
             }
             lore.set(index, l);
         }
+    }
+    
+    public short getActualData(String name)
+    {
+        for(Entry<String, String> replacement : this.itemnames.entrySet())
+        {
+            if(replacement.getValue().equals(name))
+            {
+                try
+                {
+                    String[] idval = replacement.getKey().split(":");
+                    return Short.parseShort(idval[1]);
+                }
+                catch(ArrayIndexOutOfBoundsException ex)
+                {
+                    continue;
+                }
+                catch(NumberFormatException ex)
+                {
+                    continue;
+                }
+            }
+        }
+        return 0;
+    }
+    
+    public List<String> getRecipeLore(EnderRecipe er, ItemStack[] matrix)
+    {
+        return il.getRecipeLore(er, matrix);
+    }
+    
+     public static String translateAlternateColorCodesBackwards(char altColorChar, String textToTranslate) 
+     {
+        char[] b = textToTranslate.toCharArray();
+        for (int i = 0; i < b.length - 1; i++) 
+        {
+            if (b[i] == ChatColor.COLOR_CHAR && "0123456789AaBbCcDdEeFfKkLlMmNnOoRr".indexOf(b[i+1]) > -1) 
+            {
+                b[i] = altColorChar;
+                //b[i+1] = Character.toLowerCase(b[i+1]);
+            }
+        }
+        return new String(b);
     }
     
 }

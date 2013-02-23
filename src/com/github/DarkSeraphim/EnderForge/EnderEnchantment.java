@@ -8,34 +8,37 @@ import org.bukkit.enchantments.Enchantment;
  */
 public enum EnderEnchantment
 {
-    PROTECTION(Enchantment.PROTECTION_ENVIRONMENTAL, "protection"),
-    FIRE_PROTECTION(Enchantment.PROTECTION_FIRE, "fireprotection"),
-    FALL_PROTECTION(Enchantment.PROTECTION_FALL, "fallprotection"),
-    EXPLOSION_PROTECTION(Enchantment.PROTECTION_EXPLOSIONS, "explosionprotection"),
-    PROJECTILE_PROTECTION(Enchantment.PROTECTION_PROJECTILE, "projectileprotection"),
-    WATERBREATHING(Enchantment.OXYGEN, "waterbreathing"),
-    WATER_WORKER(Enchantment.WATER_WORKER,"waterworker"),
-    THORNS(Enchantment.THORNS, "thorns"),
-    SHARPNESS(Enchantment.DAMAGE_ALL, "sharpness"),
-    SMITE(Enchantment.DAMAGE_UNDEAD, "smite"),
-    BANE_OF_ARTHROPODS(Enchantment.DAMAGE_ARTHROPODS, "baneofarthropods"),
-    KNOCKBACK(Enchantment.KNOCKBACK, "knockback"),
-    FIRE_ASPECT(Enchantment.FIRE_ASPECT, "fireaspect"),
-    LOOT(Enchantment.LOOT_BONUS_MOBS, "loot"),
-    EFFICIENCY(Enchantment.DIG_SPEED, "efficiency"),
-    SILK_TOUCH(Enchantment.SILK_TOUCH, "silktouch"),
-    DURABILITY(Enchantment.DURABILITY, "durability"),
-    FORTUNE(Enchantment.LOOT_BONUS_BLOCKS, "fortune"),
-    POWER(Enchantment.ARROW_DAMAGE, "power"),
-    ARROW_KNOCKBACK(Enchantment.ARROW_KNOCKBACK, "arrowknockback"),
-    FLAME(Enchantment.ARROW_FIRE, "firearrows"),
-    INFINITE(Enchantment.ARROW_INFINITE, "infinite");
+    PROTECTION(Enchantment.PROTECTION_ENVIRONMENTAL, "protection", "Protection"),
+    FIRE_PROTECTION(Enchantment.PROTECTION_FIRE, "fireprotection", "Fire Protection"),
+    FALL_PROTECTION(Enchantment.PROTECTION_FALL, "fallprotection", "Feather Falling"),
+    EXPLOSION_PROTECTION(Enchantment.PROTECTION_EXPLOSIONS, "explosionprotection", "Blast Protection"),
+    PROJECTILE_PROTECTION(Enchantment.PROTECTION_PROJECTILE, "projectileprotection", "Projectile Protection"),
+    WATERBREATHING(Enchantment.OXYGEN, "waterbreathing", "Respiration"),
+    WATER_WORKER(Enchantment.WATER_WORKER,"waterworker", "Aqua Affinity"),
+    THORNS(Enchantment.THORNS, "thorns", "Thorns"),
+    SHARPNESS(Enchantment.DAMAGE_ALL, "sharpness", "Sharpness"),
+    SMITE(Enchantment.DAMAGE_UNDEAD, "smite", "Smite"),
+    BANE_OF_ARTHROPODS(Enchantment.DAMAGE_ARTHROPODS, "baneofarthropods", "Bane of Arthropods"),
+    KNOCKBACK(Enchantment.KNOCKBACK, "knockback", "Knockback"),
+    FIRE_ASPECT(Enchantment.FIRE_ASPECT, "fireaspect", "Fire Aspect"),
+    LOOT(Enchantment.LOOT_BONUS_MOBS, "loot", "Looting"),
+    EFFICIENCY(Enchantment.DIG_SPEED, "efficiency", "Efficiency"),
+    SILK_TOUCH(Enchantment.SILK_TOUCH, "silktouch", "Silk Touch"),
+    DURABILITY(Enchantment.DURABILITY, "durability", "Unbreaking"),
+    FORTUNE(Enchantment.LOOT_BONUS_BLOCKS, "fortune", "Fortune"),
+    POWER(Enchantment.ARROW_DAMAGE, "power", "Power"),
+    ARROW_KNOCKBACK(Enchantment.ARROW_KNOCKBACK, "arrowknockback", "Punch"),
+    FLAME(Enchantment.ARROW_FIRE, "firearrows", "Flame"),
+    INFINITE(Enchantment.ARROW_INFINITE, "infinite", "Infinity");
     
-    private EnderEnchantment(Enchantment e, String s)
+    private EnderEnchantment(Enchantment e, String s, String name)
     {
-        this.name = s;
+        this.cfgName = s;
+        this.name = name;
         this.ench = e;
     }
+    
+    private final String cfgName;
     
     private final String name;
     
@@ -44,6 +47,11 @@ public enum EnderEnchantment
     public String getName()
     {
         return this.name;
+    }
+    
+    public String getCfgName()
+    {
+        return this.cfgName;
     }
     
     public Enchantment getEnchantment()
@@ -55,7 +63,7 @@ public enum EnderEnchantment
     {
         for(EnderEnchantment se : values())
         {
-            if(se.getName().equals(s))
+            if(se.getCfgName().equals(s))
             {
                 return se.getEnchantment();
             }

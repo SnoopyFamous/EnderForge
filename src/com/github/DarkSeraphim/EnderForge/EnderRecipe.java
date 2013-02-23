@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -23,6 +24,8 @@ public class EnderRecipe
     ItemStack result;
     
     ItemMeta meta;
+    
+    Recipe rec;
     
     public EnderRecipe(ItemStack result)
     {
@@ -43,7 +46,7 @@ public class EnderRecipe
         List<String> lores = new ArrayList<String>();
         for(int i = 0; i < lore.length; i++)
         {
-            lores.add(ChatColor.RESET+lore[i]);
+            lores.add(ChatColor.RESET+ChatColor.translateAlternateColorCodes('&', lore[i]));
         }
         this.meta.setLore(lores);
         this.result.setItemMeta(this.meta);
@@ -72,7 +75,6 @@ public class EnderRecipe
     {
         for(ItemStack i : iss)
         {
-            System.out.println("Adding ingredient for '"+this.meta.getDisplayName()+"': "+(i.getItemMeta().hasDisplayName() ? i.getItemMeta().getDisplayName() : i.getType().name()));
             addIngredient(i);
         }
         return this;
@@ -87,17 +89,22 @@ public class EnderRecipe
     public void registerRecipe()
     {
         ShapelessRecipe sr = new ShapelessRecipe(this.result);
-        System.out.println("Data registered for recipe: "+getIdentifier(this.result));
         for(ItemStack i : ingredients)
         {
             sr.addIngredient(i.getAmount(), i.getType(), (i.getType().getMaxDurability() > 0 ? (int)i.getData().getData() : i.getDurability()));
         }
         Bukkit.addRecipe(sr);
+        this.rec = sr;
     }
     
     public ItemStack getResult()
     {
         return this.result;
+    }
+    
+    public Recipe getRecipe()
+    {
+        return this.rec;
     }
     
     public List<ItemStack> getIngredients()
